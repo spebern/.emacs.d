@@ -984,14 +984,6 @@
   (push '("*Cargo Run*" :height 30) popwin:special-display-config)
   (push '("*Go Test*" :height 30) popwin:special-display-config))
 
-(use-package vue-mode
-  :ensure t)
-
-(use-package lsp-vue
-  :ensure t
-  :config
-  (add-hook 'vue-mode-hook #'lsp-vue-mmm-enable))
-
 (use-package deadgrep
   :ensure t
   :config
