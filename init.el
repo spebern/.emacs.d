@@ -948,8 +948,8 @@
   (evil-define-key 'normal rust-mode-map (kbd "g d") 'xref-find-definitions)
   (evil-define-key 'normal rust-mode-map (kbd "M-.") 'xref-find-definitions)
 
-  (add-to-list 'eglot-server-programs '(rust-mode . (eglot-rls "/home/ben/.cargo/bin/rls")))
-  (add-to-list 'eglot-server-programs '(go-mode . ("/home/ben/go/bin/bingo")))
+  (add-to-list 'eglot-server-programs '(rust-mode . (eglot-rls "~/.cargo/bin/rls")))
+  (add-to-list 'eglot-server-programs '(go-mode . ("~/go/bin/bingo")))
   (add-to-list 'eglot-server-programs '((c++-mode c-mode) . (eglot-cquery "/bin/ccls"))))
 
 (require 'eglot)
@@ -1116,7 +1116,7 @@
  '(anzu-replace-to-string-separator " => ")
  '(anzu-search-threshold 1000)
  '(evil-collection-setup-minibuffer t)
- '(gorepl-command "/home/ben/go/bin/gore")
+ '(gorepl-command "~/go/bin/gore")
  '(magit-log-section-arguments (quote ("--decorate" "-n256")))
  '(org-agenda-files
    (quote
