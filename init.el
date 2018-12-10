@@ -60,7 +60,8 @@
 (use-package evil
   :ensure t
   :init
-  (setq evil-want-integration t)
+  (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+  (setq evil-want-keybinding nil)
   :config
   (define-key evil-normal-state-map (kbd "C-o") 'pop-global-mark)
   (define-key evil-normal-state-map (kbd "C-u") 'evil-scroll-up)
@@ -70,7 +71,8 @@
   :after evil
   :ensure t
   :custom (evil-collection-setup-minibuffer t)
-  :config (evil-collection-init))
+  :config
+  (evil-collection-init))
 
 (use-package evil-mc
   :ensure t
@@ -92,7 +94,7 @@
     :ensure t)
   (evil-leader/set-leader "<SPC>")
   (evil-leader/set-key
-    "r" 'vr/query-replace
+    "r" 'anzu-query-replace-regexp
     "k"  'kill-this-buffer
     "d" 'deadgrep
     "e" 'find-file
@@ -267,16 +269,17 @@
 
 (use-package yasnippet
   :ensure t
-  :commands (yas-expand yas-hippie-try-expand)
+  ;; :commands (yas-expand yas-hippie-try-expand)
   :mode ("/\\.emacs\\.d/snippets/" . snippet-mode)
-  :hook ((text-mode prog-mode)  . yas-minor-mode)
+  ;; :hook ((text-mode prog-mode)  . yas-minor-mode)
   :init
   (yas-global-mode)
   :config
-  (setq yas-verbosity 1)
-  (setq yas-snippet-dirs (list (concat user-emacs-directory "snippets")))
-  (setq yas-prompt-functions '(yas-ido-prompt yas-complete-prompt))
-  (yas-reload-all))
+  ;; (setq yas-verbosity 1)
+  ;; (setq yas-snippet-dirs (list (concat user-emacs-directory "snippets")))
+  ;; (setq yas-prompt-functions '(yas-ido-prompt yas-complete-prompt))
+  ;; (yas-reload-all))
+  )
 
 (use-package yasnippet-snippets
   :ensure t)
@@ -783,6 +786,7 @@
   (setq magit-completing-read-function #'ivy-completing-read)
   (setq magit-branch-prefer-remote-upstream '("master"))
   (setq magit-refs-pad-commit-counts t)
+  (add-hook 'magit-mode-hook 'magit-svn-mode)
   (add-to-list 'git-commit-known-pseudo-headers "Ticket")
   (evil-leader/set-key
     "ms" 'magit-status
@@ -945,7 +949,7 @@
   (evil-define-key 'normal rust-mode-map (kbd "M-.") 'xref-find-definitions)
 
   (add-to-list 'eglot-server-programs '(rust-mode . (eglot-rls "/home/ben/.cargo/bin/rls")))
-  (add-to-list 'eglot-server-programs '(go-mode . ("/home/ben/go/bin/go-langserver" "-mode=stdio" "-gocodecompletion")))
+  (add-to-list 'eglot-server-programs '(go-mode . ("/home/ben/go/bin/bingo")))
   (add-to-list 'eglot-server-programs '((c++-mode c-mode) . (eglot-cquery "/bin/ccls"))))
 
 (require 'eglot)
@@ -955,19 +959,23 @@
 (add-hook 'rust-mode-hook 'eglot-ensure)
 (add-hook 'python-mode-hook 'eglot-ensure)
 
-(use-package visual-regexp-steroids
+(use-package anzu
   :ensure t
-  :bind (("C-x r" . vr/query-replace)))
+  :config
+  (global-anzu-mode +1)
+  (set-face-attribute 'anzu-mode-line nil
+                      :foreground "yellow" :weight 'bold)
+  (custom-set-variables
+   '(anzu-mode-lighter "")
+   '(anzu-deactivate-region t)
+   '(anzu-search-threshold 1000)
+   '(anzu-replace-threshold 50)
+   '(anzu-replace-to-string-separator " => "))
+  (define-key isearch-mode-map [remap isearch-query-replace]  #'anzu-isearch-query-replace)
+  (define-key isearch-mode-map [remap isearch-query-replace-regexp] #'anzu-isearch-query-replace-regexp))
 
 (use-package vagrant
   :ensure t)
-
-(use-package ein
-  :ensure t
-  :config
-  (require 'ein-loaddefs)
-  (require 'ein-notebook)
-  (setq ein:use-auto-complete t))
 
 (use-package popwin
   :ensure t
@@ -1048,15 +1056,19 @@
           treemacs-file-follow-delay          0.2
           treemacs-follow-after-init          t
           treemacs-follow-recenter-distance   0.1
+          treemacs-git-command-pipe           ""
           treemacs-goto-tag-strategy          'refetch-index
           treemacs-indentation                2
           treemacs-indentation-string         " "
           treemacs-is-never-other-window      nil
+          treemacs-max-git-entries            5000
           treemacs-no-png-images              nil
+          treemacs-no-delete-other-windows    t
           treemacs-project-follow-cleanup     nil
           treemacs-persist-file               (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
           treemacs-recenter-after-file-follow nil
           treemacs-recenter-after-tag-follow  nil
+          treemacs-show-cursor                nil
           treemacs-show-hidden-files          t
           treemacs-silent-filewatch           nil
           treemacs-silent-refresh             nil
@@ -1076,7 +1088,7 @@
     (pcase (cons (not (null (executable-find "git")))
                  (not (null (executable-find "python3"))))
       (`(t . t)
-       (treemacs-git-mode 'extended))
+       (treemacs-git-mode 'deferred))
       (`(t . _)
        (treemacs-git-mode 'simple))))
   :bind
@@ -1096,11 +1108,21 @@
   :after treemacs projectile
   :ensure t)
 
+(use-package vhdl-tools
+  :ensure t
+  :config
+  (setq vhdl-basic-offset 4))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(anzu-deactivate-region t)
+ '(anzu-mode-lighter "")
+ '(anzu-replace-threshold 50)
+ '(anzu-replace-to-string-separator " => ")
+ '(anzu-search-threshold 1000)
  '(evil-collection-setup-minibuffer t)
  '(gorepl-command "/home/ben/go/bin/gore")
  '(magit-log-section-arguments (quote ("--decorate" "-n256")))
@@ -1109,19 +1131,18 @@
     ("/home/ben/Dropbox/org/habbits.org" "/home/ben/Dropbox/org/index.org" "~/workspace/perl6/Projective/TODO.org" "~/workspace/elisp/telmacs/TODO.org" "~/workspace/perl5/EMP/TODO.org" "~/workspace/uni/inside_my_iphone/TODO.org")))
  '(package-selected-packages
    (quote
-    (go-playground doom-modeline gorepl-mode markdown-toc wttrin speed-type xkcd eglot treemacs-projectile treemacs-evil treemacs slime-volleyball dad-joke window-number digitalocean hacker-typer go-dlv snippet gotest company-statistics google-this deadgrep vue-mode lsp-vue js-format jsfmt lsp-go rustic travis yasnippet-snippets sql-indent format-sql clippy inf-mongo mongo import-popwin popwin lsp-java flymake-cursor flymake-rust anaphora a quelpa-use-package quelpa ein-subpackages ein-notebook ein-loaddefs ein borg vagrant ox-gfm org-journal wolfram wolfram-mode magit-todos cargo minesweeper mines sweetgreen counsel-tramp electric-pair-mode electric-pair electric-operator nyan-mode auto-yasnippet weechat lsp-ui lspi-ui lsp-rust markdown-preview-mode markdown-mode+ cquery meghanada realgud google-c-style autodisass-java-bytecode counsel-spotify visual-regexp-steroids go-eldoc go-gopath autotetris-mode lsp-mode evil-collection flycheck-gometalinter notmutch counsel-dash markdown-mode notmuch helm-tramp company-tern go-mode godoctor html-check-frag yaml-tomato fcitx nginx-mode dockerfile-mode flyparens highlight-parentheses exec-path-from-shell indium xref-js2 js2-refactor restclient nodejs-repl js-auto-beautify flymake-lua company-lua lua-mode calfw-ical calfw-org flycheck-ycmd company-ycmd ycmd www-synonyms paste-of-code gitter tree-mode julia-shell flycheck-julia magithub package-lint test-simple erlang swift-mode clojure-mode slack request evil-exchange langtool evil-mc ess company-quickhelp elpy comapny-jedi company-jedi evil-avy ivy-hydra hydra evil-org fireplace evil-lion ztree yaml-mode which-key web-mode use-package tide smex skewer-mode racer python-mode php-mode perl6-mode package-utils ox-reveal org-projectile org-evil org-bullets mu4e-alert latex-preview-pane json-mode ivy-rich highlight-symbol helm-perldoc google-translate git-messenger git-gutter+ ggtags flycheck-rust flycheck-rtags flycheck-perl6 expand-region evil-surround evil-snipe evil-smartparens evil-nerd-commenter evil-mu4e evil-magit evil-leader evil-escape evil-cleverparens ensime elfeed-org elfeed-goodies editorconfig dumb-jump disaster counsel-projectile company-web company-irony company-go company-flx company-auctex company-anaconda cmake-mode cmake-ide clang-format calfw atom-dark-theme ag ace-window)))
- '(safe-local-variable-values (quote ((eval set-fill-column 120))))
+    (winum magic-latex-buffer vhdl-tools anzu projectile-ripgrep ripgrep persp-projectile perspective magit-svn eyebrowse go-playground doom-modeline gorepl-mode markdown-toc wttrin speed-type xkcd eglot treemacs-projectile treemacs-evil treemacs slime-volleyball dad-joke window-number digitalocean hacker-typer go-dlv snippet gotest company-statistics google-this deadgrep vue-mode lsp-vue js-format jsfmt lsp-go rustic travis yasnippet-snippets sql-indent format-sql clippy inf-mongo mongo import-popwin popwin lsp-java flymake-cursor flymake-rust anaphora a quelpa-use-package quelpa ein-subpackages ein-notebook ein-loaddefs ein borg vagrant ox-gfm org-journal wolfram wolfram-mode magit-todos cargo minesweeper mines sweetgreen counsel-tramp electric-pair-mode electric-pair electric-operator nyan-mode auto-yasnippet weechat lsp-ui lspi-ui lsp-rust markdown-preview-mode markdown-mode+ cquery meghanada realgud google-c-style autodisass-java-bytecode counsel-spotify visual-regexp-steroids go-eldoc go-gopath autotetris-mode lsp-mode evil-collection flycheck-gometalinter notmutch counsel-dash markdown-mode notmuch helm-tramp company-tern go-mode godoctor html-check-frag yaml-tomato fcitx nginx-mode dockerfile-mode flyparens highlight-parentheses exec-path-from-shell indium xref-js2 js2-refactor restclient nodejs-repl js-auto-beautify flymake-lua company-lua lua-mode calfw-ical calfw-org flycheck-ycmd company-ycmd ycmd www-synonyms paste-of-code gitter tree-mode julia-shell flycheck-julia magithub package-lint test-simple erlang swift-mode clojure-mode slack request evil-exchange langtool evil-mc ess company-quickhelp elpy comapny-jedi company-jedi evil-avy ivy-hydra hydra evil-org fireplace evil-lion ztree yaml-mode which-key web-mode use-package tide smex skewer-mode racer python-mode php-mode perl6-mode package-utils ox-reveal org-projectile org-evil org-bullets mu4e-alert latex-preview-pane json-mode ivy-rich highlight-symbol helm-perldoc google-translate git-messenger git-gutter+ ggtags flycheck-rust flycheck-rtags flycheck-perl6 expand-region evil-surround evil-snipe evil-smartparens evil-nerd-commenter evil-mu4e evil-magit evil-leader evil-escape evil-cleverparens ensime elfeed-org elfeed-goodies editorconfig dumb-jump disaster counsel-projectile company-web company-irony company-go company-flx company-auctex company-anaconda cmake-mode cmake-ide clang-format calfw atom-dark-theme ag ace-window)))
+ '(safe-local-variable-values
+   (quote
+    ((cperl-indent-subs-specially)
+     (cperl-close-paren-offset . -2)
+     (eval set-fill-column 120))))
  '(warning-minimum-level :error))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(company-scrollbar-bg ((t (:background "#34f238993c40"))))
- '(company-scrollbar-fg ((t (:background "#28f92bcc2ea0"))))
- '(company-tooltip ((t (:inherit default :background "#21ca241e2673"))))
- '(company-tooltip-common ((t (:inherit font-lock-constant-face))))
- '(company-tooltip-selection ((t (:inherit font-lock-function-name-face))))
  '(cperl-array-face ((t)))
  '(cperl-hash-face ((t)))
  '(web-mode-current-element-highlight-face ((t (:foreground "#FF8A4B"))))
