@@ -65,7 +65,10 @@
   :config
   (define-key evil-normal-state-map (kbd "C-o") 'pop-global-mark)
   (define-key evil-normal-state-map (kbd "C-u") 'evil-scroll-up)
-  (define-key evil-normal-state-map (kbd "g f") 'imenu))
+  (define-key evil-normal-state-map (kbd "g f") 'imenu)
+  (with-eval-after-load 'evil
+    (defalias #'forward-evil-word #'forward-evil-symbol)))
+
 
 (use-package evil-collection
   :after evil
@@ -86,6 +89,12 @@
   (setq-default evil-escape-delay 0.2)
   (evil-escape-mode))
 
+(defun er-switch-to-previous-buffer ()
+  "Switch to previously open buffer.
+Repeated invocations toggle between the two most recently open buffers."
+  (interactive)
+  (switch-to-buffer (other-buffer (current-buffer) 1)))
+
 (use-package evil-leader
   :ensure t
   :config
@@ -99,7 +108,7 @@
     "d" 'deadgrep
     "e" 'find-file
     "b" 'switch-to-buffer
-    "<SPC>" 'er/expand-region))
+    "<SPC>" 'er-switch-to-previous-buffer))
 
 (use-package evil-surround
   :ensure t
@@ -421,6 +430,22 @@
   :config
   (setq flyspell-issue-message-flag nil)) ; performance
 
+
+
+;; (dolist (mode '(emacs-lisp-mode-hook
+;;                 inferior-lisp-mode-hook
+;;                 clojure-mode-hook
+;;                 python-mode-hook
+;;                 rust-mode-hook
+;;                 go-mode-hook
+;;                 js-mode-hook
+;;                 R-mode-hook))
+;;   (add-hook mode
+;;             '(lambda ()
+;;                (flyspell-prog-mode))))
+
+
+
 (use-package langtool
   :ensure t
   :config
@@ -738,8 +763,8 @@
 	      #'(lambda () my-current-time)))
     (org-todo arg)))
 
-(use-package org-journal
-  :ensure t)
+;; (use-package org-journal
+;;   :ensure t)
 
 (use-package org-bullets
   :ensure t
@@ -780,7 +805,6 @@
          ([remap magit-pull-popup] . magit-pull-and-fetch-popup)
          ("<f7>" . magit-status))
   :config
-  (setq magit-auto-revert-mode nil)
   (remove-hook 'magit-refs-sections-hook 'magit-insert-tags)
   (setq magit-display-buffer-function #'magit-display-buffer-fullcolumn-most-v1)
   (setq magit-completing-read-function #'ivy-completing-read)
@@ -822,12 +846,8 @@
   :config
   (setq ediff-split-window-function #'split-window-horizontally))
 
-(use-package magithub
-  :after magit
-  :ensure t
-  :config
-  (magithub-feature-autoinject t)
-  (setq magithub-clone-default-directory "~/workspace"))
+(use-package forge
+  :ensure t)
 
 (use-package magit-todos
   :after magit
@@ -860,20 +880,23 @@
 (use-package rustic
   :ensure t
   :config
-  (add-hook 'rustic-mode-hook #'racer-mode))
+  (add-to-list 'evil-emacs-state-modes 'rustic-popup-mode))
+
+(use-package rust-auto-use
+  :ensure t)
 
 (use-package flycheck-rust
   :ensure t
   :config
   (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
 
-(use-package racer
-  :ensure t
-  :bind (("M-." . racer-find-definition))
-  :config
-  (evil-define-key 'normal rust-mode-map (kbd "g d") 'racer-find-definition)
-  (setq racer-cmd "~/.cargo/bin/racer")
-  (setq racer-rust-src-path "~/.rust/src/"))
+;; (use-package racer
+;;   :ensure t
+;;   :bind (("M-." . racer-find-definition))
+;;   :config
+;;   (evil-define-key 'normal rust-mode-map (kbd "g d") 'racer-find-definition)
+;;   (setq racer-cmd "~/.cargo/bin/racer")
+;;   (setq racer-rust-src-path "~/.rust/src/"))
 
 (use-package cargo
   :ensure t
@@ -942,22 +965,40 @@
   :ensure t
   :bind(("M-." . xref-find-definitions))
   :config
+  (define-key evil-normal-state-map (kbd "g r") 'xref-find-references)
+  (define-key evil-normal-state-map (kbd "g d") 'xref-find-definitions)
+
   (evil-define-key 'normal go-mode-map (kbd "g d") 'xref-find-definitions)
+  (evil-define-key 'normal go-mode-map (kbd "g r") 'xref-find-references)
   (evil-define-key 'normal go-mode-map (kbd "M-.") 'xref-find-definitions)
 
   (evil-define-key 'normal rust-mode-map (kbd "g d") 'xref-find-definitions)
+  (evil-define-key 'normal rust-mode-map (kbd "g r") 'xref-find-references)
   (evil-define-key 'normal rust-mode-map (kbd "M-.") 'xref-find-definitions)
 
   (add-to-list 'eglot-server-programs '(rust-mode . (eglot-rls "~/.cargo/bin/rls")))
   (add-to-list 'eglot-server-programs '(go-mode . ("~/go/bin/bingo")))
   (add-to-list 'eglot-server-programs '((c++-mode c-mode) . (eglot-cquery "/bin/ccls"))))
-
 (require 'eglot)
 (add-hook 'c++-mode-hook 'eglot-ensure)
 (add-hook 'c-mode-hook 'eglot-ensure)
 (add-hook 'go-mode-hook 'eglot-ensure)
 (add-hook 'rust-mode-hook 'eglot-ensure)
 (add-hook 'python-mode-hook 'eglot-ensure)
+
+;; (use-package lsp-mode
+;;   :ensure t
+;;   :commands lsp
+;;   :bind(("M-." . xref-find-definitions))
+;;   :config
+;;   (evil-define-key 'normal go-mode-map (kbd "g d") 'xref-find-definitions)
+;;   (evil-define-key 'normal go-mode-map (kbd "M-.") 'xref-find-definitions)
+
+;;   (evil-define-key 'normal rust-mode-map (kbd "g d") 'xref-find-definitions)
+;;   (evil-define-key 'normal rust-mode-map (kbd "M-.") 'xref-find-definitions))
+
+;; (use-package lsp-ui :commands lsp-ui-mode)
+;; (use-package company-lsp :commands company-lsp)
 
 (use-package anzu
   :ensure t
@@ -981,7 +1022,9 @@
   :ensure t
   :config
   (popwin-mode)
+  (push '("rustic-popup-buffer" :height 30) popwin:special-display-config)
   (push '("*Cargo Run*" :height 30) popwin:special-display-config)
+  (push '("*Cargo Test*" :height 30) popwin:special-display-config)
   (push '("*Go Test*" :height 30) popwin:special-display-config))
 
 (use-package deadgrep
@@ -1100,10 +1143,26 @@
   :after treemacs projectile
   :ensure t)
 
-(use-package vhdl-tools
-  :ensure t
-  :config
-  (setq vhdl-basic-offset 4))
+;; (use-package vhdl-tools
+;;   :ensure t
+;;   :config
+;;   (flycheck-define-checker vhdl-tool
+;;     "A VHDL syntax checker, type checker and linter using VHDL-Tool.
+
+;; See URL `http://vhdltool.com'."
+;;     :command ("vhdl-tool" "client" "lint" "--compact" "--stdin" "-f" source
+;;               )
+;;     :standard-input t
+;;     :error-patterns
+;;     ((warning line-start (file-name) ":" line ":" column ":w:" (message) line-end)
+;;      (error line-start (file-name) ":" line ":" column ":e:" (message) line-end))
+;;     :modes (vhdl-mode vhdl-tools-mode))
+;;   (add-to-list 'flycheck-checkers 'vhdl-tool))
+
+(setq vhdl-basic-offset 4)
+
+(use-package org2blog
+  :ensure t)
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -1115,6 +1174,9 @@
  '(anzu-replace-threshold 50)
  '(anzu-replace-to-string-separator " => ")
  '(anzu-search-threshold 1000)
+ '(custom-safe-themes
+   (quote
+    ("2642a1b7f53b9bb34c7f1e032d2098c852811ec2881eec2dc8cc07be004e45a0" "8e51e44e5b079b2862335fcc5ff0f1e761dc595c7ccdb8398094fb8e088b2d50" "aea30125ef2e48831f46695418677b9d676c3babf43959c8e978c0ad672a7329" "cabc32838ccceea97404f6fcb7ce791c6e38491fd19baa0fcfb336dcc5f6e23c" default)))
  '(evil-collection-setup-minibuffer t)
  '(gorepl-command "~/go/bin/gore")
  '(magit-log-section-arguments (quote ("--decorate" "-n256")))
@@ -1123,7 +1185,7 @@
     ("/home/ben/Dropbox/org/habbits.org" "/home/ben/Dropbox/org/index.org" "~/workspace/perl6/Projective/TODO.org" "~/workspace/elisp/telmacs/TODO.org" "~/workspace/perl5/EMP/TODO.org" "~/workspace/uni/inside_my_iphone/TODO.org")))
  '(package-selected-packages
    (quote
-    (winum magic-latex-buffer vhdl-tools anzu projectile-ripgrep ripgrep persp-projectile perspective magit-svn eyebrowse go-playground doom-modeline gorepl-mode markdown-toc wttrin speed-type xkcd eglot treemacs-projectile treemacs-evil treemacs slime-volleyball dad-joke window-number digitalocean hacker-typer go-dlv snippet gotest company-statistics google-this deadgrep vue-mode lsp-vue js-format jsfmt lsp-go rustic travis yasnippet-snippets sql-indent format-sql clippy inf-mongo mongo import-popwin popwin lsp-java flymake-cursor flymake-rust anaphora a quelpa-use-package quelpa ein-subpackages ein-notebook ein-loaddefs ein borg vagrant ox-gfm org-journal wolfram wolfram-mode magit-todos cargo minesweeper mines sweetgreen counsel-tramp electric-pair-mode electric-pair electric-operator nyan-mode auto-yasnippet weechat lsp-ui lspi-ui lsp-rust markdown-preview-mode markdown-mode+ cquery meghanada realgud google-c-style autodisass-java-bytecode counsel-spotify visual-regexp-steroids go-eldoc go-gopath autotetris-mode lsp-mode evil-collection flycheck-gometalinter notmutch counsel-dash markdown-mode notmuch helm-tramp company-tern go-mode godoctor html-check-frag yaml-tomato fcitx nginx-mode dockerfile-mode flyparens highlight-parentheses exec-path-from-shell indium xref-js2 js2-refactor restclient nodejs-repl js-auto-beautify flymake-lua company-lua lua-mode calfw-ical calfw-org flycheck-ycmd company-ycmd ycmd www-synonyms paste-of-code gitter tree-mode julia-shell flycheck-julia magithub package-lint test-simple erlang swift-mode clojure-mode slack request evil-exchange langtool evil-mc ess company-quickhelp elpy comapny-jedi company-jedi evil-avy ivy-hydra hydra evil-org fireplace evil-lion ztree yaml-mode which-key web-mode use-package tide smex skewer-mode racer python-mode php-mode perl6-mode package-utils ox-reveal org-projectile org-evil org-bullets mu4e-alert latex-preview-pane json-mode ivy-rich highlight-symbol helm-perldoc google-translate git-messenger git-gutter+ ggtags flycheck-rust flycheck-rtags flycheck-perl6 expand-region evil-surround evil-snipe evil-smartparens evil-nerd-commenter evil-mu4e evil-magit evil-leader evil-escape evil-cleverparens ensime elfeed-org elfeed-goodies editorconfig dumb-jump disaster counsel-projectile company-web company-irony company-go company-flx company-auctex company-anaconda cmake-mode cmake-ide clang-format calfw atom-dark-theme ag ace-window)))
+    (forge rust-auto-use rust-playground base16-theme org2blog winum magic-latex-buffer vhdl-tools anzu projectile-ripgrep ripgrep persp-projectile perspective magit-svn eyebrowse go-playground doom-modeline gorepl-mode markdown-toc wttrin speed-type xkcd eglot treemacs-projectile treemacs-evil treemacs slime-volleyball dad-joke window-number digitalocean hacker-typer go-dlv snippet gotest company-statistics google-this deadgrep vue-mode js-format jsfmt lsp-go rustic travis yasnippet-snippets sql-indent format-sql clippy inf-mongo mongo import-popwin popwin lsp-java flymake-cursor flymake-rust anaphora a quelpa-use-package quelpa ein-subpackages ein-notebook ein-loaddefs borg vagrant ox-gfm org-journal wolfram wolfram-mode magit-todos cargo minesweeper mines sweetgreen counsel-tramp electric-pair-mode electric-pair electric-operator nyan-mode auto-yasnippet weechat lsp-ui lspi-ui lsp-rust markdown-preview-mode markdown-mode+ cquery meghanada realgud google-c-style autodisass-java-bytecode counsel-spotify visual-regexp-steroids go-eldoc go-gopath autotetris-mode evil-collection flycheck-gometalinter notmutch counsel-dash markdown-mode notmuch helm-tramp company-tern go-mode godoctor html-check-frag yaml-tomato fcitx nginx-mode dockerfile-mode flyparens highlight-parentheses exec-path-from-shell indium xref-js2 js2-refactor restclient nodejs-repl js-auto-beautify flymake-lua company-lua lua-mode calfw-ical calfw-org flycheck-ycmd company-ycmd ycmd www-synonyms paste-of-code gitter tree-mode julia-shell flycheck-julia magithub package-lint test-simple erlang swift-mode clojure-mode slack request evil-exchange langtool evil-mc ess company-quickhelp elpy comapny-jedi company-jedi evil-avy ivy-hydra hydra evil-org fireplace evil-lion ztree yaml-mode which-key web-mode use-package tide smex skewer-mode racer python-mode php-mode perl6-mode package-utils ox-reveal org-projectile org-evil org-bullets mu4e-alert latex-preview-pane json-mode ivy-rich highlight-symbol helm-perldoc google-translate git-messenger git-gutter+ ggtags flycheck-rust flycheck-rtags flycheck-perl6 expand-region evil-surround evil-snipe evil-smartparens evil-nerd-commenter evil-mu4e evil-magit evil-leader evil-escape evil-cleverparens ensime elfeed-org elfeed-goodies editorconfig dumb-jump disaster counsel-projectile company-web company-irony company-go company-flx company-auctex company-anaconda cmake-mode cmake-ide clang-format calfw atom-dark-theme ag ace-window)))
  '(safe-local-variable-values
    (quote
     ((cperl-indent-subs-specially)
